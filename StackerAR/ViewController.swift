@@ -9,15 +9,38 @@
 import UIKit
 import SceneKit
 import ARKit
+import AVFoundation
 
 class ViewController: UIViewController, ARSCNViewDelegate {
     
     @IBOutlet var sceneView: ARSCNView!
     var allNodes: [SCNNode] = []
-    var nodeNum = 0;
+    var nodeNum = 0
     var leftRight = "left"
-    var pos = 0.0;
+    var pos = -0.8
     var gameStarted = false
+    var leftBound:Float = -0.1
+    var rightBound:Float = 0.1
+    var currentBoxWidth: Float = 0.2
+    var lastBoxWidth: Float!
+    var lastBox: SCNNode!
+    var tappedBox: SCNNode!
+    var scoreLbl: UILabel!
+    var currentColor: UIColor!
+    var gameLost = false
+    var speed = 6.0
+    let systemSoundID: SystemSoundID = 1103
+    //let systemSoundID: SystemSoundID = 1306
+    let audioSource = SCNAudioSource(named: "tick.mp3")!
+    
+    
+    
+    
+    var score = 0 {
+        didSet {
+            scoreLbl.text = "\(score)"
+        }
+    }
     
     
     override func viewDidLoad() {
@@ -34,17 +57,15 @@ class ViewController: UIViewController, ARSCNViewDelegate {
         sceneView.session.run(configuration)
         
         
-        
         //place foundation block
         let node = SCNNode()
         node.geometry = SCNBox(width: 0.2, height: 0.1, length: 0.2, chamferRadius: 0)
         node.geometry?.firstMaterial?.diffuse.contents = UIColor.blue
-        node.position = SCNVector3(0,0,-0.5)
+        node.position = SCNVector3(0, -0.8, -0.5)
         self.sceneView.scene.rootNode.addChildNode(node)
-        node.name = String(nodeNum);
-        allNodes.append(node)
-        
-        nodeNum += 1;
+
+
+        lastBox = node
         
     }
     
@@ -63,7 +84,9 @@ class ViewController: UIViewController, ARSCNViewDelegate {
     
     func setColor(_ node: SCNNode){
         
-        node.geometry?.firstMaterial?.diffuse.contents = getRandomColor()
+        currentColor = getRandomColor()
+        
+        node.geometry?.firstMaterial?.diffuse.contents = currentColor
     }
     
     func getRandomColor() -> UIColor{
@@ -80,21 +103,27 @@ class ViewController: UIViewController, ARSCNViewDelegate {
     
     func moveBox(_ node: SCNNode){
         
-        if (leftRight == "left"){
+        let leftPos = SCNVector3(-1, pos, -0.5)
+        let rightPos = SCNVector3(1, pos, -0.5)
+        
+
+        if (SCNVector3EqualToVector3(node.position, leftPos)){ //move right
             
-            node.runAction(SCNAction.moveBy(x: 2, y: 0, z: 0, duration: 2))
-            
-            leftRight = "right"
-        }
-        else{
-            
-            node.runAction(SCNAction.moveBy(x: -2, y: 0, z: 0, duration: 2))
-            
-            leftRight = "left"
+            node.runAction(SCNAction.moveBy(x: 2, y: 0, z: 0, duration: speed))
         }
         
+        else if (SCNVector3EqualToVector3(node.position, rightPos)){//move left
+            
+             node.runAction(SCNAction.moveBy(x: -2, y: 0, z: 0, duration: speed))
+        }
+        
+        speed -= 0.2
+
+
         
     }
+    
+
     
     func setPostition(_ node: SCNNode){
         
@@ -111,13 +140,12 @@ class ViewController: UIViewController, ARSCNViewDelegate {
     }
     
     
-    @objc func addBox() -> SCNNode{
+    func addBox() -> SCNNode{
         
         //initilize node
         let newNode = SCNNode()
-        newNode.geometry = SCNBox(width: 0.2, height: 0.1, length: 0.2, chamferRadius: 0)
+        newNode.geometry = SCNBox(width: CGFloat(currentBoxWidth), height: 0.1, length: 0.2, chamferRadius: 0)
         setColor(newNode)
-        newNode.name = String(nodeNum);
         setPostition(newNode)
         
         
@@ -126,9 +154,9 @@ class ViewController: UIViewController, ARSCNViewDelegate {
         //add node to stack
         self.sceneView.scene.rootNode.addChildNode(newNode)
         
-        moveBox(newNode)
-        
-        
+
+       moveBox(newNode)
+
         /*
          Timer.scheduledTimer(timeInterval: 2, target: self, selector: #selector(addBox), userInfo: nil, repeats: false)
          
@@ -144,16 +172,172 @@ class ViewController: UIViewController, ARSCNViewDelegate {
         return newNode
     }
     
-    func fixBoxPos(_ position: SCNVector3){
+    
+    func boxFall(_ leftRight: String){
         
-        
-        //place foundation block
         let node = SCNNode()
-        node.geometry = SCNBox(width: 0.2, height: 0.1, length: 0.2, chamferRadius: 0)
-        node.geometry?.firstMaterial?.diffuse.contents = getRandomColor()
-        node.position = position
-        self.sceneView.scene.rootNode.addChildNode(node)
+        var width: Float
         
+        
+        let tappedBoxPos = tappedBox.position
+        
+        
+        let tappedBoxLeftEdge = tappedBoxPos.x - (lastBoxWidth / 2)
+        let tappedBoxRightEdge = tappedBoxPos.x + (lastBoxWidth / 2)
+        
+        
+
+        if (leftRight == "right"){//too far right
+            
+            
+            
+            width = tappedBoxRightEdge - rightBound
+            
+            let newPosition = rightBound + (width / 2)
+            
+            
+            
+            node.geometry = SCNBox(width: CGFloat(width), height: 0.1, length: 0.2, chamferRadius: 0)
+            node.geometry?.firstMaterial?.diffuse.contents = currentColor
+            node.position = SCNVector3(Double(newPosition), pos, -0.5)
+            
+
+            node.runAction(SCNAction.moveBy(x: 0, y: -10, z: 0, duration: 10))
+            node.runAction(SCNAction.fadeOut(duration: 5.0))
+
+            
+            self.sceneView.scene.rootNode.addChildNode(node)
+            
+            
+            
+        }
+        else{ // too far left
+            
+            
+            width = leftBound - tappedBoxLeftEdge
+            
+            let newPosition = leftBound - (width / 2)
+            
+            
+            node.geometry = SCNBox(width: CGFloat(width), height: 0.1, length: 0.2, chamferRadius: 0)
+            node.geometry?.firstMaterial?.diffuse.contents = currentColor
+            node.position = SCNVector3(Double(newPosition), pos, -0.5)
+            
+            node.runAction(SCNAction.moveBy(x: 0, y: -10, z: 0, duration: 10))
+            node.runAction(SCNAction.fadeOut(duration: 5.0))
+            
+            self.sceneView.scene.rootNode.addChildNode(node)
+
+        }
+
+    }
+    
+    
+    
+    
+    
+    
+    func fixBoxPos(_ color: UIColor) -> SCNNode?{
+        
+        //AudioServicesPlaySystemSound (systemSoundID)
+        
+
+        
+        let node = SCNNode()
+        
+        node.runAction(SCNAction.playAudio(audioSource, waitForCompletion: false))
+        
+        let lastBoxPos = lastBox.position
+        let tappedBoxPos = tappedBox.position
+        
+        
+        let tappedBoxLeftEdge = tappedBoxPos.x - (currentBoxWidth / 2)
+        let tappedBoxRightEdge = tappedBoxPos.x + (currentBoxWidth / 2)
+        
+
+        let difference = tappedBoxPos.x - lastBoxPos.x
+        
+        lastBoxWidth = currentBoxWidth
+        
+        
+        if !(tappedBoxRightEdge > leftBound && tappedBoxLeftEdge < rightBound){ // miss
+            
+            gameLost = true
+            return nil
+        }
+        
+        
+
+        if (difference == 0){ //perfect hit
+
+            node.geometry = SCNBox(width: 0.2, height: 0.1, length: 0.2, chamferRadius: 0)
+            node.geometry?.firstMaterial?.diffuse.contents = color
+            node.position = tappedBox.position
+            self.sceneView.scene.rootNode.addChildNode(node)
+        }
+        else if (difference > 0){//too far right, shrink left bound
+
+            currentBoxWidth = rightBound - tappedBoxLeftEdge
+            
+            let newPosition = tappedBoxLeftEdge + (currentBoxWidth / 2)
+            
+            
+            
+            node.geometry = SCNBox(width: CGFloat(currentBoxWidth), height: 0.1, length: 0.2, chamferRadius: 0)
+            node.geometry?.firstMaterial?.diffuse.contents = color
+            node.position = SCNVector3(Double(newPosition), pos, -0.5)
+            self.sceneView.scene.rootNode.addChildNode(node)
+
+            
+            leftBound = tappedBoxLeftEdge
+            
+            
+            boxFall("right")
+            
+        }
+        else if(difference < 0){
+            
+            
+            currentBoxWidth = tappedBoxRightEdge - leftBound
+            
+            let newPosition = leftBound + (currentBoxWidth / 2)
+            
+
+            node.geometry = SCNBox(width: CGFloat(currentBoxWidth), height: 0.1, length: 0.2, chamferRadius: 0)
+            node.geometry?.firstMaterial?.diffuse.contents = color
+            node.position = SCNVector3(Double(newPosition), pos, -0.5)
+            self.sceneView.scene.rootNode.addChildNode(node)
+            
+            
+            rightBound = tappedBoxRightEdge
+            
+            
+            boxFall("left")
+            
+        }
+        
+
+        return node
+        
+    }
+    
+    
+    
+    func gameOver(){
+        
+        scoreLbl.textColor = .orange
+        scoreLbl.text = "Score: \(score)"
+        
+
+        // game over Lbl
+        let lostLbl = UILabel(frame: CGRect(x: 0.0, y: view.frame.height * 0.1, width: view.frame.width, height: view.frame.height * 0.1))
+        lostLbl.textColor = .orange
+        lostLbl.font = UIFont(name: "Arial", size: view.frame.width * 0.1)
+        lostLbl.text = "Game Over!"
+        lostLbl.textAlignment = .center
+        
+        view.addSubview(lostLbl)
+    
     }
     
     
@@ -167,31 +351,65 @@ class ViewController: UIViewController, ARSCNViewDelegate {
             
             let newNode = addBox()
             
-            allNodes.append(newNode)
-            nodeNum += 1;
+            tappedBox = newNode
+            
+            
+            // Score Lbl
+            scoreLbl = UILabel(frame: CGRect(x: 0.0, y: view.frame.height * 0.05, width: view.frame.width, height: view.frame.height * 0.1))
+            scoreLbl.textColor = .magenta
+            scoreLbl.font = UIFont(name: "Arial", size: view.frame.width * 0.1)
+            scoreLbl.text = "0"
+            scoreLbl.textAlignment = .center
+            
+            view.addSubview(scoreLbl)
+            
+            
+            
+            
             
             gameStarted = true
         }
         else{ //game has started
             
-            let lastNode = findNode(num: nodeNum - 1)
-            let lastNodePos = lastNode!.position
+            
+            if (gameLost == true){
+                
+                gameOver()
+                
+                return
+            }
+            
+
             
             
-            fixBoxPos(lastNodePos)
             
-            lastNode!.removeFromParentNode()
+            
+            
+            
+            let fixedBox = fixBoxPos(currentColor)
+            
+            tappedBox.removeFromParentNode()
+            
+            
+            if (gameLost == true){
+                
+                gameOver()
+                
+                return
+            }
+            
+            
+            score += 1
+            
             
             pos += 0.1
             
+            lastBox = fixedBox
             
-            let newNode = addBox()
+            tappedBox = addBox()
             
-            
-            
-            allNodes.append(newNode)
-            nodeNum += 1;
-            
+
+
         }
         
         
