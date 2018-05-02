@@ -1,6 +1,6 @@
 //
 //  ViewController.swift
-//  TestAR
+//  StackerAR
 //
 //  Created by Andrew Amen on 4/20/18.
 //  Copyright © 2018 Andrew Amen. All rights reserved.
@@ -8,7 +8,6 @@
 
 import UIKit
 import SceneKit
-import SpriteKit
 import ARKit
 import AVFoundation
 
@@ -38,7 +37,7 @@ class ViewController: UIViewController, ARSCNViewDelegate {
     var highScore = 0
     
     
-
+    
     
     
     
@@ -48,6 +47,8 @@ class ViewController: UIViewController, ARSCNViewDelegate {
             scoreLbl.text = "\(score)"
         }
     }
+    
+
     
     
     override func viewDidLoad() {
@@ -64,13 +65,17 @@ class ViewController: UIViewController, ARSCNViewDelegate {
         sceneView.session.run(configuration)
         
         
+
+        addLightingEffects()
         
         
-        do { // if there is a high score
-            try loadHighScore()
-        }
-        catch{// set default to 0
-            
+        
+        
+        //try to load high score
+        highScore = (defaults.value(forKey: "highScore") as? Int) ?? 0
+        
+        //if there isnt one, set key
+        if (highScore == 0){
             //set high score data persistance
             defaults.set(highScore, forKey: "highScore")
             defaults.synchronize() //Call when you're done editing all defaults for the method.
@@ -86,9 +91,34 @@ class ViewController: UIViewController, ARSCNViewDelegate {
         lastBox = node
     }
     
-    func loadHighScore() throws{
-        highScore = (defaults.value(forKey: "highScore") as? Int)!
+    func addLightingEffects(){
+        
+        // Lighting (Ambient)
+        let ambientLight = SCNLight()
+        ambientLight.type = .ambient
+        ambientLight.color = UIColor.white
+        ambientLight.intensity = 300.0
+        
+        let ambientLightNode = SCNNode()
+        ambientLightNode.light = ambientLight
+        ambientLightNode.position.y = 2.0
+        
+        self.sceneView.scene.rootNode.addChildNode(ambientLightNode)
+        
+        // Lighting (Omnidirectional)
+        let omniLight = SCNLight()
+        omniLight.type = .omni
+        omniLight.color = UIColor.white
+        omniLight.intensity = 1000.0
+        
+        let omniLightNode = SCNNode()
+        omniLightNode.light = omniLight
+        omniLightNode.position.y = 3.0
+        
+        self.sceneView.scene.rootNode.addChildNode(omniLightNode)
+        
     }
+    
     
     func findNode(num: Int) -> SCNNode?{
         for node in allNodes {
@@ -118,10 +148,10 @@ class ViewController: UIViewController, ARSCNViewDelegate {
         
     }
     
-
+    
     
     func moveBox(_ node: SCNNode){
-
+        
         let moveLeft = SCNAction.moveBy(x: -2, y: 0, z: 0, duration: speed)
         let moveRight = SCNAction.moveBy(x: 2, y: 0, z: 0, duration: speed)
         
@@ -147,9 +177,9 @@ class ViewController: UIViewController, ARSCNViewDelegate {
         //add node to stack
         self.sceneView.scene.rootNode.addChildNode(newNode)
         
-
+        
         moveBox(newNode)
-
+        
         
         /*
          Timer.scheduledTimer(timeInterval: speed, target: self, selector: #selector(addBox), userInfo: nil, repeats: false)
@@ -157,9 +187,9 @@ class ViewController: UIViewController, ARSCNViewDelegate {
          DispatchQueue.main.asyncAfter(deadline: .now() + speed) { // change 2 to desired number of seconds
          newNode.removeFromParentNode()
          }
- */
-         
-
+         */
+        
+        
         
         
         
@@ -324,8 +354,8 @@ class ViewController: UIViewController, ARSCNViewDelegate {
         
         
         if (score > highScore){
-        
-        
+            
+            
             //set high score data persistance
             defaults.set(score, forKey: "highScore")
             defaults.synchronize() //Call when you're done editing all defaults for the method.
@@ -367,7 +397,7 @@ class ViewController: UIViewController, ARSCNViewDelegate {
         restartBtn.isHidden = false
         
         self.view.addSubview(restartBtn)
-
+        
         
     }
     
@@ -428,7 +458,7 @@ class ViewController: UIViewController, ARSCNViewDelegate {
             scoreLbl.text = "0"
             scoreLbl.textAlignment = .center
             scoreLbl.isHidden = false
-
+            
             
             view.addSubview(scoreLbl)
             
