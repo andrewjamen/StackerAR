@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		8C1D8F02209A8BE500698946 /* rawImage.png in Resources */ = {isa = PBXBuildFile; fileRef = 8C1D8F01209A8BE500698946 /* rawImage.png */; };
 		8CC2FBE9209168DE00E27075 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8CC2FBE8209168DE00E27075 /* AppDelegate.swift */; };
 		8CC2FBEB209168DE00E27075 /* art.scnassets in Resources */ = {isa = PBXBuildFile; fileRef = 8CC2FBEA209168DE00E27075 /* art.scnassets */; };
 		8CC2FBED209168DE00E27075 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8CC2FBEC209168DE00E27075 /* ViewController.swift */; };
@@ -17,6 +18,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		8C1D8F01209A8BE500698946 /* rawImage.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = rawImage.png; sourceTree = SOURCE_ROOT; };
 		8CC2FBE5209168DE00E27075 /* StackerAR.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = StackerAR.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		8CC2FBE8209168DE00E27075 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		8CC2FBEA209168DE00E27075 /* art.scnassets */ = {isa = PBXFileReference; lastKnownFileType = wrapper.scnassets; path = art.scnassets; sourceTree = "<group>"; };
@@ -64,6 +66,7 @@
 				8CC2FBEE209168DE00E27075 /* Main.storyboard */,
 				8CC2FBF1209168DE00E27075 /* Assets.xcassets */,
 				8CC2FBFE2093DF6400E27075 /* tick.mp3 */,
+				8C1D8F01209A8BE500698946 /* rawImage.png */,
 				8CC2FBF3209168DE00E27075 /* LaunchScreen.storyboard */,
 				8CC2FBF6209168DE00E27075 /* Info.plist */,
 			);
@@ -132,6 +135,7 @@
 				8CC2FBFF2093DF6400E27075 /* tick.mp3 in Resources */,
 				8CC2FBF5209168DE00E27075 /* LaunchScreen.storyboard in Resources */,
 				8CC2FBF2209168DE00E27075 /* Assets.xcassets in Resources */,
+				8C1D8F02209A8BE500698946 /* rawImage.png in Resources */,
 				8CC2FBF0209168DE00E27075 /* Main.storyboard in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
